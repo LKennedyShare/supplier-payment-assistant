@@ -26,7 +26,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Check public discovery without funds
-        run: python scripts/check_discovery.py --service supplier --output discovery.json
+        run: python scripts/check_discovery.py --service supplier --require-pypi --output discovery.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -23,7 +23,7 @@ Requires Python 3.12 or later:
 
 .. code-block:: powershell
 
-   python -m pip install "git+https://github.com/LKennedyShare/supplier-payment-assistant.git"
+   python -m pip install supplier-payment-assistant
    supplier-payment-assistant --demo
 
 ``python -m supplier_payment_assistant`` accepts the same arguments.
@@ -159,10 +159,8 @@ never authorizes a real payment.
 Release and unpaid discovery automation
 ---------------------------------------
 
-PyPI publication is **pending owner authorization**, not configured or published.
-Keep using the GitHub installation above until the first PyPI publication.
-The owner must sign in at https://pypi.org/manage/account/publishing/ and create
-this one-time pending trusted publisher:
+Version 0.1.0 is published on PyPI. Trusted publishing is configured for this
+repository without stored API tokens. The publisher identity is:
 
 * PyPI project: ``supplier-payment-assistant``
 * GitHub owner: ``LKennedyShare``
@@ -170,17 +168,17 @@ this one-time pending trusted publisher:
 * Workflow filename: ``publish.yml``
 * Environment: ``pypi`` (exact, fixed GitHub environment name)
 
-The owner must also create that GitHub environment. No API token or password
+The GitHub environment is configured. No API token or password
 is used. No manual approval per release is required by default; environment
 protection rules can impose approval if the owner chooses.
-After setup, publishing a GitHub release tagged ``v0.1.0`` builds the current
+Publishing a GitHub release with a matching version tag builds that
 version's wheel and sdist, runs mocked tests, the installed offline CLI and
 strict Twine checks, then publishes via OIDC. Only ``release.published`` triggers
 publication, not a PR or manual workflow run. Tags must exactly match
 ``v<pyproject.version>`` and package identity is checked before build.
 PyPI versions are immutable: future releases need a new version and matching
 tag. Duplicate uploads fail rather than silently skipping existing files.
-Current version remains ``0.1.0`` for the first publication.
+The initial published version is ``0.1.0``; do not reuse that release tag.
 
 ``discovery.yml`` runs nightly at 03:41 UTC and supports manual dispatch.
 It uses Python's standard library only, no SDK, wallet, secrets or funds.
@@ -197,8 +195,8 @@ The JSON, Actions artifact and step summary contain only fixed check names and
 statuses, never response bodies, headers or private data. Requests refuse
 redirects, cap bodies at 2 MB and use 15-second socket timeouts; failures exit
 nonzero. A missing PyPI project is explicitly ``pending``, without masking
-service failures. After publication add ``--require-pypi`` to the workflow's
-monitor command to enforce PyPI availability and repository/MIT/name metadata.
+service failures. The scheduled workflow uses ``--require-pypi`` to enforce
+PyPI availability and repository/MIT/name metadata.
 The homepage and ``/buyers.txt`` must link this public client repository.
 
 GitHub schedules can be delayed or dropped and public-repository schedules
