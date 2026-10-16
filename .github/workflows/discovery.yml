@@ -1,0 +1,36 @@
+name: Unpaid discovery diagnostics
+
+on:
+  schedule:
+    - cron: '41 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: unpaid-discovery
+  cancel-in-progress: false
+
+jobs:
+  discovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check public discovery without funds
+        run: python scripts/check_discovery.py --service supplier --output discovery.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unpaid-discovery
+          path: discovery.json
+          if-no-files-found: error
+          retention-days: 14

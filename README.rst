@@ -17,7 +17,7 @@ in this repository.
 * No LLM key or subscription required.
 
 Install and try offline
-----------------------
+-----------------------
 
 Requires Python 3.12 or later:
 
@@ -35,7 +35,7 @@ wallet access or network requests. No synthetic supplier identity should be
 treated as real.
 
 Inspect the real workflow without paying
----------------------------------------
+----------------------------------------
 
 Prepare your own unsigned JSON request in a local ``invoice.json`` file.
 Required top-level fields:
@@ -61,7 +61,7 @@ operations, not your invoice, public key or signature. No wallet is needed and
 no on-chain payment is signed.
 
 Explicitly authorize the two service fees
-----------------------------------------
+-----------------------------------------
 
 The workflow expects these prices:
 
@@ -155,6 +155,56 @@ Development
 Tests use mocked HTTP/facilitator responses and predictable unfunded test wallet
 material only. The CI workflow runs tests and the offline demonstration; it
 never authorizes a real payment.
+
+Release and unpaid discovery automation
+---------------------------------------
+
+PyPI publication is **pending owner authorization**, not configured or published.
+Keep using the GitHub installation above until the first PyPI publication.
+The owner must sign in at https://pypi.org/manage/account/publishing/ and create
+this one-time pending trusted publisher:
+
+* PyPI project: ``supplier-payment-assistant``
+* GitHub owner: ``LKennedyShare``
+* Repository: ``supplier-payment-assistant``
+* Workflow filename: ``publish.yml``
+* Environment: ``pypi`` (exact, fixed GitHub environment name)
+
+The owner must also create that GitHub environment. No API token or password
+is used. No manual approval per release is required by default; environment
+protection rules can impose approval if the owner chooses.
+After setup, publishing a GitHub release tagged ``v0.1.0`` builds the current
+version's wheel and sdist, runs mocked tests, the installed offline CLI and
+strict Twine checks, then publishes via OIDC. Only ``release.published`` triggers
+publication, not a PR or manual workflow run. Tags must exactly match
+``v<pyproject.version>`` and package identity is checked before build.
+PyPI versions are immutable: future releases need a new version and matching
+tag. Duplicate uploads fail rather than silently skipping existing files.
+Current version remains ``0.1.0`` for the first publication.
+
+``discovery.yml`` runs nightly at 03:41 UTC and supports manual dispatch.
+It uses Python's standard library only, no SDK, wallet, secrets or funds.
+It reads public health/OpenAPI/MCP/agent cards/homepage/buyers metadata and sends
+one empty-body IBAN REST quote probe, one empty-arguments MCP IBAN quote probe
+and one A2A ``message/send`` with ``operation=check_iban`` and ``request={}``.
+It never registers keys, signs, pays, executes verification or uploads invoices
+or supplier identities. No output URLs are followed.
+All requests identify as ``scout-distribution-monitor``: diagnostics, not
+customers, purchases, demand or independent adoption.
+
+Run locally with ``python scripts/check_discovery.py --service supplier --output discovery.json``.
+The JSON, Actions artifact and step summary contain only fixed check names and
+statuses, never response bodies, headers or private data. Requests refuse
+redirects, cap bodies at 2 MB and use 15-second socket timeouts; failures exit
+nonzero. A missing PyPI project is explicitly ``pending``, without masking
+service failures. After publication add ``--require-pypi`` to the workflow's
+monitor command to enforce PyPI availability and repository/MIT/name metadata.
+The homepage and ``/buyers.txt`` must link this public client repository.
+
+GitHub schedules can be delayed or dropped and public-repository schedules
+may be disabled after 60 days without repository activity. This is not
+guaranteed continuous uptime monitoring; review Actions and re-enable schedules
+when needed. No artificial activity, stars or promotional posting is generated.
 
 License
 -------
