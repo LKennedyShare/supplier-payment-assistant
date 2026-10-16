@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "supplier-payment-assistant"
+version = "0.1.0"
+description = "Explicitly capped x402 buyer workflow for advisory supplier payment verification"
+readme = {file = "README.rst", content-type = "text/x-rst"}
+requires-python = ">=3.12"
+authors = [{name = "LKennedyShare"}]
+license = "MIT"
+license-files = ["LICENSE"]
+dependencies = [
+    "httpx>=0.28,<0.29",
+    "x402[evm]>=2.25,<3",
+    "eth-account>=0.14,<0.15",
+    "cryptography>=50,<51",
+    "pydantic>=2.13,<3",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8.3,<10"]
+
+[project.scripts]
+supplier-payment-assistant = "supplier_payment_assistant.client:main"
+
+[project.urls]
+Repository = "https://github.com/LKennedyShare/supplier-payment-assistant"
+Service = "https://supplier-payment-verifier-production.up.railway.app/"
+
+[tool.setuptools.packages.find]
+include = ["supplier_payment_assistant*"]
+exclude = ["tests*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
