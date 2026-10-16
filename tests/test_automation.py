@@ -344,5 +344,7 @@ def test_workflow_permission_separation():
     assert "actions/upload-artifact@v4" in build
     assert "actions/download-artifact@v4" in publish
     nightly = (ROOT / ".github" / "workflows" / "discovery.yml").read_text()
-    assert "id-token" not in nightly and "secrets." not in nightly and "pip install" not in nightly
+    assert "id-token" not in nightly and "secrets." not in nightly
+    assert "supplier-payment-assistant" in nightly and "--demo" in nightly
+    assert "pip install" not in nightly.split("\n  discovery:\n")[1]
     assert "contents: read" in nightly and "workflow_dispatch:" in nightly

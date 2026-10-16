@@ -182,6 +182,8 @@ The initial published version is ``0.1.0``; do not reuse that release tag.
 
 ``discovery.yml`` runs nightly at 03:41 UTC and supports manual dispatch.
 It uses Python's standard library only, no SDK, wallet, secrets or funds.
+An independent job installs the published PyPI package and runs only its offline
+synthetic demo, outside a repository checkout; it never invokes a paid command.
 It reads public health/OpenAPI/MCP/agent cards/homepage/buyers metadata and sends
 one empty-body IBAN REST quote probe, one empty-arguments MCP IBAN quote probe
 and one A2A ``message/send`` with ``operation=check_iban`` and ``request={}``.
