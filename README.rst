@@ -14,6 +14,7 @@ in this repository.
 * Inspection first: quotes without a wallet or uploading invoice data.
 * Explicit payment authorization with a combined **0.055 USDC maximum**.
 * Installable CLI, JSON reports, public request models and Python interface.
+* Real optional LangChain and OpenAI Agents tools with operator-owned approval.
 * No LLM key or subscription required.
 
 Install and try offline
@@ -128,6 +129,108 @@ produce different bytes.
 Requests identify as ``supplier-payment-assistant``. The label is not a
 verified customer identity; the payer wallet establishes the service tenant.
 
+Agent-framework integrations (source version 0.2.0)
+---------------------------------------------------
+
+PyPI currently serves **0.1.0**; the integrations below are in the **0.2.0**
+source tree until that version is released. Install from a reviewed checkout:
+
+.. code-block:: powershell
+
+   python -m pip install -e ".[langchain,openai]"
+   python -m examples.framework_demo --framework langchain
+   python -m examples.framework_demo --framework openai
+
+These examples construct real framework objects and invoke only the synthetic
+demo locally: no Agent runner, model/provider/API key, wallet or network.
+Both extras are optional; the base package imports neither framework.
+
+.. code-block:: python
+
+   from supplier_payment_assistant import SupplierPaymentTools
+
+   tools = SupplierPaymentTools()  # Keep ONE instance across calls.
+   langchain_tools = tools.langchain_tools()  # Real StructuredTool objects.
+   openai_tools = tools.openai_tools()        # Real Agents FunctionTool objects.
+
+The default tools are ``offline_demo`` and ``inspect_supplier`` only.
+``inspect_supplier(unsigned_request_json: str)`` accepts an unsigned JSON string
+conforming to ``PaymentRequest`` and delegates to ``run_live(pay=False)``:
+only empty quote probes are sent, never invoice data. It reads no wallet key.
+Each tool returns a JSON-compatible dictionary. Async framework invocations
+offload synchronous work using ``asyncio.to_thread``.
+
+For example, an application can construct an OpenAI agent as follows (this
+snippet does **not** run it or call a model):
+
+.. code-block:: python
+
+   from agents import Agent
+   agent = Agent(
+       name="Advisory supplier verification",
+       instructions="Inspect quotes or show the synthetic demo; never pay invoices.",
+       tools=tools.openai_tools(),
+   )
+
+For LangChain, an application can construct a tool-bound chat model without
+invoking it (``langchain-openai`` is a separate application dependency):
+
+.. code-block:: python
+
+   from langchain_openai import ChatOpenAI
+   advisory_model = ChatOpenAI(model="gpt-4.1-mini").bind_tools(tools.langchain_tools())
+   # No invoke/stream/agent loop here.
+
+**Privacy:** giving invoice JSON to an LLM may send private invoice/supplier
+data to your chosen model/provider. Framework tracing or debug logging may
+record tool inputs and results. This package enables no tracing, adds no
+capturing, and makes no automatic model calls; operators must approve data use,
+configure their own framework/provider privacy controls, and avoid logging raw
+invoices or keys. Returning a paid verification report can also disclose data.
+
+Paid verification is opt-in operator code, never a model argument:
+
+.. code-block:: python
+
+   from examples.trusted_approval import tools_for_trusted_digests
+
+   # Supply exact SHA-256 digests from authenticated ERP/operator records,
+   # never from an LLM, prompt, or untrusted incoming invoice.
+   approved_digests = frozenset()  # Empty is deny-all until trusted records exist.
+   tools = tools_for_trusted_digests(approved_digests)
+   paid_tools = tools.openai_tools()
+
+Only supplying an ``approval_policy`` callable exposes ``verify_supplier_paid``.
+The callback receives an immutable ``ApprovalRequest`` containing a recursively
+frozen, normalized ``unsigned_request``, ``canonical_body`` bytes, their
+``canonical_sha256`` digest and ``workflow_cap_usdc``. Canonical bytes are exactly
+``PaymentRequest.signed_body()`` with a validation-only signature placeholder;
+validation happens before approval without creating a key or sending data.
+Generate trusted digests independently from the same contract/canonical bytes.
+The policy must return literal ``True``; truthy strings are denied. Callback
+errors deny approval. Its immutable copy cannot mutate the actual normalized
+request passed to the existing signer/workflow. No supplied signature or
+unexpected request/tool fields are accepted. The model cannot supply approval,
+payment flags, budget, URL, or wallet parameters. Base URL is trusted constructor
+configuration, defaulting to the production origin.
+
+``workflow_cap_usdc`` defaults to ``Decimal("0.055")`` and ``max_paid_calls`` to
+one. Before any paid workflow, a lock atomically reserves the **full workflow
+cap**, with a cumulative ceiling of **0.055 USDC per tools object**. Approval is
+called outside that lock. Denial reserves nothing and sends no requests.
+``tools.reserved_usdc`` and ``tools.paid_calls`` count reserved amounts/attempts,
+**not confirmed settlement**. Failures, rejected payments, partial completion
+and unconfirmed settlement never refund the reservation: authorizations might
+have escaped. There are no automatic paid retries. ``BuyerError.report`` retains
+partial workflow status; errors are propagated rather than converted to success.
+The existing client performs all signing and fee settlement.
+
+**These limits are in-memory, per object, not persistent or wallet-wide daily
+limits. Recreating objects or restarting processes resets them. Do not create a
+new tools object per call. Production requires durable external approval and
+budget enforcement across processes and wallets.** This is advisory verification
+only, not a complete autonomous invoice-payment runner.
+
 Assurance boundaries
 --------------------
 
@@ -149,9 +252,10 @@ Development
    cd supplier-payment-assistant
    python -m venv .venv
    .\.venv\Scripts\Activate.ps1
-   python -m pip install -e ".[test]"
+   python -m pip install -e ".[test,langchain,openai]"
    python -m pytest -q
 
+Tests invoke real optional framework objects locally, with no model calls.
 Tests use mocked HTTP/facilitator responses and predictable unfunded test wallet
 material only. The CI workflow runs tests and the offline demonstration; it
 never authorizes a real payment.
@@ -159,7 +263,7 @@ never authorizes a real payment.
 Release and unpaid discovery automation
 ---------------------------------------
 
-Version 0.1.0 is published on PyPI. Trusted publishing is configured for this
+Version 0.2.0 adds optional framework adapters. Trusted publishing is configured for this
 repository without stored API tokens. The publisher identity is:
 
 * PyPI project: ``supplier-payment-assistant``

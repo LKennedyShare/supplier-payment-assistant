@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "supplier-payment-assistant"
-version = "0.1.0"
+version = "0.2.0"
 description = "Explicitly capped x402 buyer workflow for advisory supplier payment verification"
 readme = {file = "README.rst", content-type = "text/x-rst"}
 requires-python = ">=3.12"
@@ -21,6 +21,8 @@ dependencies = [
 
 [project.optional-dependencies]
 test = ["pytest>=8.3,<10"]
+langchain = ["langchain-core>=1.6,<2"]
+openai = ["openai-agents>=0.24,<1"]
 release = ["build>=1.2,<2", "twine>=6,<7"]
 
 [project.scripts]
